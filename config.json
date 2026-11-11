@@ -5,7 +5,7 @@
   "retry_delay_sec": 2,
   "request_timeout_sec": 180,
   "api_keys": ["sk-gemini-x9k2pL7mQ4vR8nT1"],
-  "cookie_file": null,
+  "cookie_file": "cookie.txt",
   "log_requests": true,
   "temporary_chats": true
 }
