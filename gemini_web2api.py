@@ -289,6 +289,11 @@ def gemini_stream_generate(prompt: str, model_id: int, think_mode: int, file_ref
                 resp = urllib.request.urlopen(req, context=ctx, timeout=CONFIG["request_timeout_sec"])
             return resp.read().decode("utf-8", errors="replace")
         except urllib.error.HTTPError as e:
+            # A 429 from Gemini Web may be a reCAPTCHA challenge, not a
+            # transient quota response. Do not repeat the challenged request.
+            if e.code == 429:
+                log("Upstream returned HTTP 429; stopping retries. Check the Gemini session in a normal browser.")
+                raise
             if e.code == 405 and update_bl_if_needed():
                 reqid = int(time.time()) % 1000000
                 url = (
