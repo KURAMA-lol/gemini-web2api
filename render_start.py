@@ -116,6 +116,32 @@ def _render_head(self):
 app.GeminiHandler.do_GET = _render_get
 app.GeminiHandler.do_HEAD = _render_head
 
+# Temporary diagnostics for upstream HTTP failures. Never log session cookies,
+# authorization values, or token-like fields from Google's response body.
+import re
+import urllib.error
+_original_gemini_stream_generate = app.gemini_stream_generate
+
+def _diagnostic_gemini_stream_generate(*args, **kwargs):
+    try:
+        return _original_gemini_stream_generate(*args, **kwargs)
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read(4096).decode("utf-8", errors="replace")
+        except Exception:
+            body = "<response body unavailable>"
+        body = re.sub(
+            r'(?i)(cookie|authorization|sapisid(?:hash)?|access_token|refresh_token|id_token|xsrf(?:token)?|token)(\s*["\']?\s*[:=]\s*["\']?)[^,;\s"\']+',
+            r'\1\2[REDACTED]', body,
+        )
+        body = re.sub(r'(?i)(SAPISID|__Secure-[A-Za-z0-9_-]+)=([^;\s"\']+)', r'\1=[REDACTED]', body)
+        content_type = exc.headers.get("Content-Type", "") if exc.headers else ""
+        retry_after = exc.headers.get("Retry-After", "") if exc.headers else ""
+        app.log(f"Upstream HTTP {exc.code}; content-type={content_type!r}; retry-after={retry_after!r}; body={body[:1000]!r}")
+        raise
+
+app.gemini_stream_generate = _diagnostic_gemini_stream_generate
+
 # The upstream exposes a Flash-Lite category under gemini-flash-lite. Keep
 # that upstream ID and offer the requested OpenAI-client-friendly alias.
 if "gemini-flash-lite" in app.MODELS:
