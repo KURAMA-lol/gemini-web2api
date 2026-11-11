@@ -1,9 +1,8 @@
 .git
-.idea
-.venv
+.github
 __pycache__
-*.pyc
-config.json
+*.py[cod]
+*.log
 cookie.txt
-cookie.json
+config.json
 .env
