@@ -9,7 +9,13 @@ import json
 import os
 import sys
 
-APP_PATH = "/app/gemini_web2api.py"
+# Detect path: Docker uses /app, Render native Python uses the project root
+_BASE = os.path.dirname(os.path.abspath(__file__))
+APP_PATH = os.path.join(_BASE, "gemini_web2api.py")
+if not os.path.exists(APP_PATH):
+    # Fallback for Docker image layout
+    APP_PATH = "/app/gemini_web2api.py"
+
 spec = importlib.util.spec_from_file_location("gemini_web2api_app", APP_PATH)
 app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
@@ -131,7 +137,7 @@ def _diagnostic_gemini_stream_generate(*args, **kwargs):
         except Exception:
             body = "<response body unavailable>"
         body = re.sub(
-            r'(?i)(cookie|authorization|sapisid(?:hash)?|access_token|refresh_token|id_token|xsrf(?:token)?|token)(\s*["\']?\s*[:=]\s*["\']?)[^,;\s"\']+',
+            r'(?i)(cookie|authorization|sapisid(?:hash)?|access_token|refresh_token|id_token|xsrf(?:token)?|token)(\s*["\']?\s*[=:]\s*["\']?)[^,;\s"\']+',
             r'\1\2[REDACTED]', body,
         )
         body = re.sub(r'(?i)(SAPISID|__Secure-[A-Za-z0-9_-]+)=([^;\s"\']+)', r'\1=[REDACTED]', body)
@@ -154,9 +160,14 @@ if "gemini-flash-lite" in app.MODELS:
 if not os.environ.get("GEMINI_DEFAULT_MODEL"):
     os.environ["GEMINI_DEFAULT_MODEL"] = "gemini-flash-lite"
 
+# Prefer config.json next to this file when present
+config_path = os.path.join(_BASE, "config.json")
+if not os.path.exists(config_path):
+    config_path = "/app/config.json"
+
 sys.argv = [
     "gemini_web2api.py",
-    "--config", "/app/config.json",
+    "--config", config_path,
     "--port", os.environ.get("PORT", "8081"),
 ]
 app.main()
