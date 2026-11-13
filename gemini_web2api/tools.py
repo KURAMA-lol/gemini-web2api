@@ -7,6 +7,8 @@ import binascii
 import io
 from urllib.parse import unquote_to_bytes
 
+from .identity import append_default_identity
+
 MAX_IMAGE_B64_SIZE = 50000  # ~37KB raw image
 
 
@@ -164,7 +166,7 @@ def messages_to_prompt(messages: list, tools: list = None, tool_choice=None) -> 
         else:
             parts.append(content if content else "")
 
-    prompt = "\n\n".join(p for p in parts if p)
+    prompt = append_default_identity("\n\n".join(p for p in parts if p))
     return prompt, images
 
 
@@ -301,7 +303,7 @@ def google_contents_to_prompt(req: dict) -> tuple:
         else:
             parts.append(text)
 
-    return "\n\n".join(p for p in parts if p), images
+    return append_default_identity("\n\n".join(p for p in parts if p)), images
 
 
 def parse_google_function_calls(text: str) -> tuple:

@@ -10,6 +10,7 @@ from gemini_web2api.config import CONFIG, DEFAULT_CONFIG
 from gemini_web2api.gemini import _build_payload
 from gemini_web2api.server import GeminiHandler, ThreadedServer
 from gemini_web2api.tools import google_contents_to_prompt, messages_to_prompt
+from gemini_web2api.identity import DEFAULT_IDENTITY_PROMPT
 
 
 def _decode_payload(payload):
@@ -80,7 +81,8 @@ class MessageParsingTests(unittest.TestCase):
             ],
         }])
 
-        self.assertEqual(prompt, "Describe [Image attached]")
+        self.assertTrue(prompt.startswith("Describe [Image attached]"))
+        self.assertIn(DEFAULT_IDENTITY_PROMPT, prompt)
         self.assertEqual(images, [(b"fake png", "image/png")])
 
     def test_messages_to_prompt_extracts_responses_input_image_url(self):
@@ -92,7 +94,8 @@ class MessageParsingTests(unittest.TestCase):
             ],
         }])
 
-        self.assertEqual(prompt, "Describe [Image attached]")
+        self.assertTrue(prompt.startswith("Describe [Image attached]"))
+        self.assertIn(DEFAULT_IDENTITY_PROMPT, prompt)
         self.assertEqual(images, [("https://example.com/image.png", "image/png")])
 
     def test_messages_to_prompt_ignores_malformed_image_data_url(self):
@@ -120,7 +123,8 @@ class MessageParsingTests(unittest.TestCase):
             }],
         })
 
-        self.assertEqual(prompt, "Describe\n[Image attached]")
+        self.assertTrue(prompt.startswith("Describe\n[Image attached]"))
+        self.assertIn(DEFAULT_IDENTITY_PROMPT, prompt)
         self.assertEqual(images, [(b"fake png", "image/png")])
 
     def test_google_contents_to_prompt_ignores_malformed_inline_image_data(self):

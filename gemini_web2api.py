@@ -34,6 +34,8 @@ import argparse
 import base64
 import binascii
 from typing import Optional
+
+from gemini_web2api.identity import append_default_identity
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 
@@ -579,7 +581,7 @@ def messages_to_prompt(messages: list, tools: list = None) -> tuple:
             parts.append(f"[Tool result for {msg.get('name', '')}]: {content}")
         else:
             parts.append(content if content else "")
-    return "\n\n".join(p for p in parts if p), images
+    return append_default_identity("\n\n".join(p for p in parts if p)), images
 
 
 def google_contents_to_prompt(req: dict) -> tuple:
@@ -617,7 +619,7 @@ def google_contents_to_prompt(req: dict) -> tuple:
         else:
             parts.append(text)
 
-    return "\n\n".join(part for part in parts if part), images
+    return append_default_identity("\n\n".join(part for part in parts if part)), images
 
 
 def parse_tool_calls(text: str) -> tuple:
